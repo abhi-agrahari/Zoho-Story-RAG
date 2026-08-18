@@ -22,6 +22,9 @@ class VectorStore:
         #convert the embeddings into NumPy float32 format
         embeddings = np.array(embeddings, dtype="float32")
 
+        # normalize every embedding so that inner product becomes cosine similarity
+        faiss.normalize_L2(embeddings)
+
         # add all embeddings to the FAISS index
         self.index.add(embeddings)
 
@@ -38,8 +41,11 @@ class VectorStore:
             dtype="float32"
         )
 
+        # normalize the query vector using the same method used for document vectors
+        faiss.normalize_L2(query_embedding)
+
         # search the FAISS index for top_k nearest vextors
-        distances, indices = self.index.search(
+        score, indices = self.index.search(
             query_embedding,
             top_k
         )
@@ -47,11 +53,18 @@ class VectorStore:
         # store retrieved chunks
         results = []
 
-        for index in indices[0]:
+        for i, idx in enumerate(indices[0]):
+
+            # ignore invalid indices returned by FAISS.
+            if idx == -1:
+                continue
 
             # add corresponding original text chunk
 
-            results.append(self.chunks[index])
+            results.append({
+                "text": self.chunks[idx],
+                "score": float(score[0][i])
+                })
 
         return results
 

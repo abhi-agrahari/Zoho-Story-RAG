@@ -1,6 +1,8 @@
 # import PdfReader class from pypdf library
 from pypdf import PdfReader
 from chunker import create_chunks
+from sentence_transformers import SentenceTransformer
+from vector_store import VectorStore
 
 # store path of pdf file which we want to read
 pdf_path = "data/zoho_story.pdf"
@@ -45,5 +47,36 @@ chunks = create_chunks(
 
 print("Number of chunks : ", len(chunks))
 
-print("First Chunk : ")
-print(chunks[0])
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+embeddings = model.encode(chunks)
+
+print("Number of embeddings : ", len(embeddings))
+
+print("Embedding dimensions : ", len(embeddings[0]))
+
+vector_store = VectorStore(
+    dimension= len(embeddings[0])
+)
+
+vector_store.add(
+    embeddings,
+    chunks
+)
+
+question = "What is zoho ?"
+
+question_embedding = model.encode(question)
+
+results = vector_store.search(
+    question_embedding,
+    top_k = 3
+)
+
+print("\n===== RETRIEVED CHUNKS =====")
+
+for i, result in enumerate(results):
+
+    print(f"\n----- Result {i + 1} -----\n")
+
+    print(result["text"])
