@@ -15,7 +15,28 @@ api_key = os.getenv("GROQ_API_KEY")
 # create Groq client using API key
 client = Groq(api_key=api_key)
 
-def generate_answer(question):
+def generate_answer(question, context):
+
+    # create the system instruction for the LLM.
+    system_prompt = """
+    You are a helpful assistant.
+
+    Answer the user's question using only the provided context.
+
+    If the answer cannot be found in the context,
+    clearly say that the information is not available in the document.
+    """
+
+    # Create the user prompt containing the context and question.
+    user_prompt = f"""
+    Context:
+
+    {context}
+
+    Question:
+
+    {question}
+    """
 
     # send requrest to Groq API
     response = client.chat.completions.create(
@@ -25,10 +46,10 @@ def generate_answer(question):
 
             #tell the model that this message is from user
             {
-                "role": "user",
+                "role": "system",
 
                 #Given the model the question we want to answer
-                "content": "What is Zoho"
+                "content": system_prompt
             }
         ],
         # specify LLM model
